@@ -17,7 +17,7 @@ This file orients AI coding agents working on tokenprice. Keep it concise, follo
   - src/tokenprice/__init__.py — exports only `get_pricing` and `compute_cost`.
 - Current state (truth):
   - Pricing fetch + cache implemented.
-  - CLI implemented with Click: `tokenprice price` and `tokenprice cost`.
+  - CLI implemented with Click: `tokenprice pricing` and `tokenprice cost`.
   - Multi-currency implemented: daily USD base rates cached 24h from JSDelivr currency API.
 - Project map: see repository tree; tests live in tests/test_*.py.
 

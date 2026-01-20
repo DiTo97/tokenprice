@@ -123,7 +123,7 @@ tokenprice pricing openai/gpt-5.2
 tokenprice pricing openai/gpt-5.2 --currency EUR
 
 # JSON output for scripting
-tokenprice pricing openai/gpt-5.2 --jq
+tokenprice pricing openai/gpt-5.2 --json
 
 # Compute total cost for a usage
 tokenprice cost openai/gpt-5.2 --in 1000 --out 500 --currency EUR
