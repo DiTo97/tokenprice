@@ -85,17 +85,23 @@ uv sync
 uv run pytest
 ```
 
-### Linting
+### Quality (pre-commit)
+
+Use pre-commit to run formatting and linting consistently:
 
 ```bash
-ruff check
+# One-time setup
+uv run pre-commit install
+
+# Run all hooks on the codebase
+uv run pre-commit run -a
 ```
 
-### Formatting
+This runs `ruff-format` and `ruff` with `--fix`, along with basic repo hygiene checks.
 
-```bash
-ruff format
-```
+### CI
+
+Pre-commit hooks run in CI via GitHub Actions using `uv` (see [.github/workflows/pre-commit.yml](.github/workflows/pre-commit.yml)). Pushes and pull requests to `main`/`master` execute the same checks as local runs.
 
 ## API Surface
 
@@ -105,9 +111,23 @@ Only `get_pricing` and `compute_cost` are part of the public API. Internal modul
 
 - Pricing data: [LLMTracker](https://github.com/MrUnreal/LLMTracker) by MrUnreal
 
-## Roadmap
+## CLI
 
-- CLI to query pricing from the terminal (planned; see AGENTS-docs/CLI-design.md)
+Install via UV or pip, then use the `tokenprice` command.
+
+```bash
+# Show price per 1M tokens (USD default)
+tokenprice pricing openai/gpt-5.2
+
+# Convert to another currency (uses cached FX rates)
+tokenprice pricing openai/gpt-5.2 --currency EUR
+
+# JSON output for scripting
+tokenprice pricing openai/gpt-5.2 --json
+
+# Compute total cost for a usage
+tokenprice cost openai/gpt-5.2 --in 1000 --out 500 --currency EUR
+```
 
 ## License
 
