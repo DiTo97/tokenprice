@@ -24,12 +24,23 @@ All work follows TDD: write failing tests before implementation. Use pytest for 
 ## Caching Tests
 
 - Pricing cache TTL: 6 hours (implemented)
-- FX cache TTL: 24 hours (planned; per currency pair)
+- FX cache TTL: 24 hours (implemented; USD base rates)
 - Strategy:
   - First call: expect underlying provider to be invoked.
   - Subsequent calls within TTL: ensure provider is NOT invoked; return cached result.
   - After TTL: ensure provider is invoked again.
 - For time control, prefer designing cache utilities to accept an injectable "now" or clock function; otherwise monkeypatch time source where feasible.
+
+### Currency Cache
+
+- Entry points: `tokenprice.currency.get_usd_rates()` and `get_usd_rate(currency)`.
+- Cache: async-lru with TTL (24h) on the internal cached getter.
+- Test pattern:
+  - Clear cache with `tokenprice.currency._get_usd_rates_bucketed.cache_clear()` before each test.
+  - Monkeypatch `_sync_get_usd_rates` to track call counts and return a small mapping of `Decimal` rates.
+  - Assert only one underlying fetch within the TTL window; subsequent calls re-use the cached object.
+  - Verify USD short-circuit: `get_usd_rate('USD')` returns `Decimal('1')` without fetching rates.
+- See: [tests/test_currency.py](tests/test_currency.py) for examples.
 
 ## Failure-first Tests
 

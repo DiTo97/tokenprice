@@ -4,22 +4,26 @@ Exposes only:
 - get_pricing(model_id)
 - compute_cost(model_id, input_tokens, output_tokens)
 
-Under the hood, uses async cached pricing data from LLMTracker.
+Under the hood, uses async cached pricing data from LLMTracker and optional
+forex conversion via forex-python (cached for 24h).
 """
 
 from __future__ import annotations
 
+from decimal import Decimal
+
+from tokenprice.currency import get_usd_rate
 from tokenprice.pricing import get_pricing_data
 
 
-async def get_pricing(model_id: str):
+async def get_pricing(model_id: str, currency: str = "USD"):
     """Get pricing info for a specific model.
 
     Args:
         model_id: The model identifier (e.g., 'openai/gpt-4')
 
     Returns:
-        PricingInfo for the model.
+        PricingInfo for the model, priced in the requested currency.
 
     Raises:
         ValueError: If the model is not found.
@@ -28,10 +32,31 @@ async def get_pricing(model_id: str):
     model = data.get_model(model_id)
     if model is None:
         raise ValueError(f"Model not found: {model_id}")
-    return model.pricing
+    # If USD requested, return as-is
+    target = currency.upper()
+    if target == "USD":
+        return model.pricing
+
+    # Convert pricing from USD to target currency using Decimal
+    rate = await get_usd_rate(target)
+    inp = Decimal(str(model.pricing.input_per_million)) * rate
+    outp = Decimal(str(model.pricing.output_per_million)) * rate
+
+    from tokenprice.modeling import PricingInfo
+
+    return PricingInfo(
+        input_per_million=float(inp),
+        output_per_million=float(outp),
+        currency=target,
+    )
 
 
-async def compute_cost(model_id: str, input_tokens: int, output_tokens: int) -> float:
+async def compute_cost(
+    model_id: str,
+    input_tokens: int,
+    output_tokens: int,
+    currency: str = "USD",
+) -> float:
     """Compute total cost for a specific model given token counts.
 
     Pricing is calculated using price per million tokens.
@@ -50,7 +75,7 @@ async def compute_cost(model_id: str, input_tokens: int, output_tokens: int) -> 
     if input_tokens < 0 or output_tokens < 0:
         raise ValueError("Token counts must be non-negative")
 
-    pricing = await get_pricing(model_id)
+    pricing = await get_pricing(model_id, currency=currency)
 
     per_million = 1_000_000
     input_cost = (input_tokens / per_million) * pricing.input_per_million

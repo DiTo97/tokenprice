@@ -8,17 +8,17 @@ This file orients AI coding agents working on tokenprice. Keep it concise, follo
 - Credit LLMTracker in code and docs: repo and website.
 
 ## What
-- Stack: Python 3.12, `httpx` (async), `async-lru` (6h TTL via buckets), `pydantic` models, `pytest` (+pytest-asyncio), `ruff`, package manager `uv`.
+- Stack: Python 3.12, `httpx` (async), `async-lru` (TTL), `pydantic` models, `pytest` (+pytest-asyncio), `ruff`, package manager `uv`.
 - Key modules:
   - src/tokenprice/pricing.py — async fetch + 6h TTL cache of LLMTracker JSON.
+  - src/tokenprice/currency.py — USD base rates from JSDelivr currency API with 24h TTL cache.
   - src/tokenprice/modeling.py — Pydantic models for dataset, search helpers.
-  - src/tokenprice/cache.py — small TTL bucket helper.
   - src/tokenprice/core.py — public facade exposing `get_pricing` and `compute_cost`.
   - src/tokenprice/__init__.py — exports only `get_pricing` and `compute_cost`.
 - Current state (truth):
   - Pricing fetch + cache implemented.
   - No CLI implemented yet.
-  - No currency conversion/forex wrapper yet.
+  - Multi-currency implemented: daily USD base rates cached 24h from JSDelivr currency API.
 - Project map: see repository tree; tests live in tests/test_*.py.
 
 ## How
@@ -40,12 +40,12 @@ uv run ruff check --fix
 
 Policies
 - Async I/O: All network calls are async via `httpx` (or `aiohttp`). No `requests`.
-- Caching: Pricing data cached for 6h; bucketed TTL strategy. Do not extend TTL beyond 6h.
+- Caching: Pricing data cached for 6h using async-lru TTL. Do not extend TTL beyond 6h.
 - Documentation: Keep README, AGENTS.md (this file) and AGENTS-docs in sync with code behavior.
 - Scope: Pricing data library only. Do not add token counting features.
 
 Public API policy
-- Expose only `get_pricing(model_id)` and `compute_cost(model_id, input_tokens, output_tokens)`.
+- Expose only `get_pricing(model_id, currency="USD")` and `compute_cost(model_id, input_tokens, output_tokens, currency="USD")`.
 - Caching must remain transparent to callers (no cache controls in public API).
 
 Progressive disclosure
@@ -58,7 +58,7 @@ Progressive disclosure
 Design decisions
 - No Token Counting: different tokenizers and use-cases make estimates unreliable; https://github.com/AgentOps-AI/tokencost already covers this very well.
 - Data Source: LLMTracker JSON at https://raw.githubusercontent.com/MrUnreal/LLMTracker/main/data/current/prices.json
-- Multi-currency: planned via forex-python (https://github.com/MicroPyramid/forex-python) with 24h per-pair cache; not implemented yet.
+- Multi-currency: USD base via JSDelivr currency API (https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json) cached daily (24h) with uppercased currency tags.
 - CLI: planned (Typer recommended); not implemented yet.
 
 What not to do

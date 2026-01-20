@@ -3,28 +3,26 @@
 This project requires strict caching rules and async HTTP for all network operations.
 
 Status summary
-- Pricing cache: implemented (6h TTL, TTL-bucket strategy via async-lru).
-- FX cache: planned (24h per currency pair using forex-python); not implemented yet.
+- Pricing cache: implemented (6h TTL using async-lru's TTL).
+- FX cache: implemented (24h USD base rates via JSDelivr API, cached with async-lru TTL).
 
 ## Pricing Data Cache (implemented)
 
 - Source: LLMTracker prices JSON
 - TTL: 6 hours (aligned with upstream update frequency)
 - Behavior:
-  - Cache successful fetches for 6 hours using a time-bucket key.
+  - Cache successful fetches for 6 hours using async-lru TTL.
   - If a fetch fails, bubble up the error; do not fabricate data.
   - Validate payload shape before caching (Pydantic models).
 
-## Exchange Rate Cache (planned)
+## Exchange Rate Cache (implemented)
 
-- Source: forex-python
-- TTL: 24 hours (forex-python updates daily)
-- Per-pair cache: key by `BASE->QUOTE`
-- Acceptance criteria:
-  - Public conversion API with type hints and clear exceptions.
-  - Per-pair 24h TTL cache; misses call through to forex-python.
-  - Failures propagate; no silent fallback to stale unknown data.
-  - Tests for cache hit/miss and TTL expiry.
+- Source: JSDelivr currency API (USD base rates map)
+- TTL: 24 hours (API updates daily)
+- Behavior:
+  - Cache the USD base rates dictionary for 24h via async-lru TTL; keys uppercased.
+  - Failures propagate; no silent fallback to unknown data.
+  - Tests cover cache hit/miss and TTL expiry.
 
 ## Async HTTP Requirements
 
