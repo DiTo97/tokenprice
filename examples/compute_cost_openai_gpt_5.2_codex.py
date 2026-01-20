@@ -7,13 +7,13 @@ from tokenprice import compute_cost, get_pricing
 
 async def main():
     """Demonstrate basic usage of tokenprice public API."""
-    model_id = "openai/gpt-4"
+    model_id = "openai/gpt-5.2-codex"
 
     pricing = await get_pricing(model_id)
     print(f"Pricing for {model_id} ({pricing.currency}):")
     print(
-        f"  Input: ${pricing.input_per_million:.2f} per million tokens\n"
-        f"  Output: ${pricing.output_per_million:.2f} per million tokens"
+        f"  Input: ${pricing.input_per_million:.2f} per M tokens\n"
+        f"  Output: ${pricing.output_per_million:.2f} per M tokens"
     )
 
     # Compute a sample cost

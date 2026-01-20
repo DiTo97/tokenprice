@@ -4,8 +4,6 @@ Data source: https://github.com/MrUnreal/LLMTracker
 Website: https://mrunreal.github.io/LLMTracker/
 """
 
-import time
-
 import httpx
 from async_lru import alru_cache
 
@@ -38,19 +36,14 @@ async def fetch_pricing_data() -> PricingData:
         return PricingData.model_validate(data)
 
 
-def _ttl_bucket(ttl_seconds: int) -> int:
-    """Compute a time bucket integer for TTL-based caching."""
-    return int(time.time() // ttl_seconds)
-
-
-@alru_cache(maxsize=1)
-async def _get_pricing_data_bucketed(_bucket: int) -> PricingData:
-    """Internal cached getter keyed by TTL bucket."""
+@alru_cache(ttl=CACHE_TTL_SECONDS)
+async def _get_pricing_data_bucketed() -> PricingData:
+    """Internal cached getter using async-lru TTL."""
     return await fetch_pricing_data()
 
 
 async def get_pricing_data(force_refresh: bool = False) -> PricingData:
-    """Get pricing data with async-lru caching and TTL buckets.
+    """Get pricing data with async-lru caching (6h TTL).
 
     Args:
         force_refresh: If True, clear cache and fetch fresh data
@@ -61,10 +54,8 @@ async def get_pricing_data(force_refresh: bool = False) -> PricingData:
     if force_refresh:
         # Clear cache to force fresh fetch
         _get_pricing_data_bucketed.cache_clear()
-        return await fetch_pricing_data()
 
-    bucket = _ttl_bucket(CACHE_TTL_SECONDS)
-    return await _get_pricing_data_bucketed(bucket)
+    return await _get_pricing_data_bucketed()
 
 
 def clear_pricing_cache() -> None:
