@@ -13,7 +13,7 @@ This file orients AI coding agents working on tokenprice. Keep it concise, follo
   - src/tokenprice/pricing.py — async fetch + 6h TTL cache of LLMTracker JSON.
   - src/tokenprice/modeling.py — Pydantic models for dataset, search helpers.
   - src/tokenprice/cache.py — small TTL bucket helper.
-  - src/tokenprice/api.py — public facade exposing `get_pricing` and `compute_cost`.
+  - src/tokenprice/core.py — public facade exposing `get_pricing` and `compute_cost`.
   - src/tokenprice/__init__.py — exports only `get_pricing` and `compute_cost`.
 - Current state (truth):
   - Pricing fetch + cache implemented.
