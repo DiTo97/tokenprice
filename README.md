@@ -1,85 +1,94 @@
-# Python Template 🐍
-[![PyPI version](https://img.shields.io/pypi/v/python-template-zuppif)](https://pypi.org/project/python-template-zuppif/)
+# tokenprice
 
-A template for a python project for 2025
+[![PyPI version](https://img.shields.io/pypi/v/tokenprice)](https://pypi.org/project/tokenprice/)
 
-Features:
-- [x] 🛠️ configuration in a single file [`pyproject.toml`](pyproject.toml)
-- [x] 📦 [`uv`](https://docs.astral.sh/uv/) as package manager
-- [x] 💅 [`ruff`](https://docs.astral.sh/ruff/) for linting and formatting
-- [x] 🧪 [`pytest`](https://docs.pytest.org/en/stable/) 
-- [x] 🧹 [`Makefile`](Makefile) with code quality checks
-- [ ] 📚 auto doc generation
-- [x] 🐳 CI/CD Optimized Docker Image runs when a new *release* is created pushing to gh registry
-- [x] 🦾 GitHub actions:
-    - [x] auto publish to [`pypi`](https://pypi.org/) on push on `main`
-    - [ ] auto creating a new tag on push on `main`, sync versions
-    - [x] run `tests` and `lint` on `dev` and `main` when a PR is open
+A Python library for fetching LLM token pricing across providers with multi-currency support.
 
-## Getting started
+## Why tokenprice?
 
-### Installation
+Token pricing for LLMs changes frequently across different providers. This library provides up-to-date pricing information by leveraging [LLMTracker](https://github.com/MrUnreal/LLMTracker), which updates pricing data every six hours from various sources.
 
-To set it up and run
+**Important:** This library does **not** estimate token counts from strings or messages. Any estimation would be too approximate for anything beyond plain text, and the [tokencost](https://github.com/AgentOps-AI/tokencost) package already handles that use case well. tokenprice focuses solely on providing accurate, current pricing data.
+
+## Features
+
+- Up-to-date LLM pricing from [LLMTracker](https://mrunreal.github.io/LLMTracker/)
+- Multi-currency support via forex-python
+- Built-in caching (6 hours for pricing data, 24 hours for exchange rates)
+- Simple, clean API
+
+## Installation
+
+```bash
+uv add tokenprice
+```
+
+Or with pip:
+
+```bash
+pip install tokenprice
+```
+
+## Usage
+
+```python
+from tokenprice import get_model_price
+
+# Get price in USD (default)
+price = get_model_price("gpt-4")
+print(f"Input: ${price['input']}/1M tokens")
+print(f"Output: ${price['output']}/1M tokens")
+
+# Get price in EUR
+price_eur = get_model_price("gpt-4", currency="EUR")
+print(f"Input: €{price_eur['input']}/1M tokens")
+
+# Get price in GBP
+price_gbp = get_model_price("claude-3-opus", currency="GBP")
+```
+
+## Data Source
+
+Pricing data is sourced from [LLMTracker](https://github.com/MrUnreal/LLMTracker), which aggregates and updates pricing information from various LLM providers every six hours. The raw data is available at:
+```
+https://raw.githubusercontent.com/MrUnreal/LLMTracker/main/data/current/prices.json
+```
+
+Exchange rates are provided by forex-python and cached for 24 hours.
+
+## Development
+
+This project uses `uv` as the package manager.
+
+### Setup
 
 ```bash
 uv sync
 ```
 
-Then
+### Running Tests
 
 ```bash
-python main.py
-```
-
-Will output a random joke
-
-```
-Why did the cow in the pasture get promoted at work? ...  Because he is OUT-STANDING in his field!
-```
-
-You can now run, for example, a function defined as `scripts` in the [`pyproject.toml`](pyproject.toml)
-
-```bash
-make_me_laugh
+pytest
 ```
 
 ### Linting
 
-```
+```bash
 ruff check
 ```
 
-
 ### Formatting
 
-```
+```bash
 ruff format
 ```
 
-## CI/CD
+## Credits
 
-### Tests
-Tests inside `/tests` are run using [`pytest`](https://docs.pytest.org/en/stable/) on PR both on `dev` and `main`
+- Pricing data: [LLMTracker](https://github.com/MrUnreal/LLMTracker) by MrUnreal
+- Token counting: For estimating token counts, see [tokencost](https://github.com/AgentOps-AI/tokencost)
 
-### Publish Package
- In order to publish to [pypi](https://pypi.org/) you need to create a publisher on pypi.
+## License
 
-This is explained [here](https://packaging.python.org/en/latest/guides/publishing-package-distribution-releases-using-github-actions-ci-cd-workflows/) and [here](https://docs.pypi.org/trusted-publishers/) 
-
-In practice go your pypi project -> Manage Project -> Publishing, scroll and "add a new publisher"
-
-
-### Docker
-[`Dockerfile`](Dockerfile) contains a multi stage build that uses `--compile-bytecode` to compite your package. For this example, the resulting image is just
-
-```bash
-docker build -t python-template .
-```
-
-```
-REPOSITORY        TAG       IMAGE ID       CREATED          SIZE
-python-template   latest    1ded7d260b1c   58 seconds ago   55.4MB
-```
-
-The image is build using the [`build`](.github/workflows/build.yml) workflow when a new *release* is created
+See [LICENSE](LICENSE) file for details.
