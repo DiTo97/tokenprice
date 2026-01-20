@@ -18,9 +18,8 @@ Use this checklist before submitting changes. It assumes the Agent Workflow (pla
 ## Quality
 
 ```bash
-uv run ruff format src
-uv run ruff check --select I --fix
-uv run ruff check --fix
+uv run pre-commit install
+uv run pre-commit run -a
 uv run pytest -q
 ```
 

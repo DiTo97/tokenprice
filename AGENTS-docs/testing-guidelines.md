@@ -56,10 +56,9 @@ uv run pytest -q
 # Re-run a specific test node
 uv run pytest tests/test_pricing.py::test_fetch_prices_async -q
 
-# Format and lint
-uv run ruff format src
-uv run ruff check --select I --fix
-uv run ruff check --fix
+# Format and lint (pre-commit)
+uv run pre-commit install
+uv run pre-commit run -a
 ```
 
 ## Coverage
