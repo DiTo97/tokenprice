@@ -1,0 +1,58 @@
+"""Public facade API for tokenprice.
+
+Exposes only:
+- get_pricing(model_id)
+- compute_cost(model_id, input_tokens, output_tokens)
+
+Under the hood, uses async cached pricing data from LLMTracker.
+"""
+
+from __future__ import annotations
+
+from tokenprice.pricing import get_pricing_data
+
+
+async def get_pricing(model_id: str):
+    """Get pricing info for a specific model.
+
+    Args:
+        model_id: The model identifier (e.g., 'openai/gpt-4')
+
+    Returns:
+        PricingInfo for the model.
+
+    Raises:
+        ValueError: If the model is not found.
+    """
+    data = await get_pricing_data()
+    model = data.get_model(model_id)
+    if model is None:
+        raise ValueError(f"Model not found: {model_id}")
+    return model.pricing
+
+
+async def compute_cost(model_id: str, input_tokens: int, output_tokens: int) -> float:
+    """Compute total cost for a specific model given token counts.
+
+    Pricing is calculated using price per million tokens.
+
+    Args:
+        model_id: The model identifier.
+        input_tokens: Number of input tokens.
+        output_tokens: Number of output tokens.
+
+    Returns:
+        Total cost as a float in the model's pricing currency.
+
+    Raises:
+        ValueError: If the model is not found or token counts are negative.
+    """
+    if input_tokens < 0 or output_tokens < 0:
+        raise ValueError("Token counts must be non-negative")
+
+    pricing = await get_pricing(model_id)
+
+    per_million = 1_000_000
+    input_cost = (input_tokens / per_million) * pricing.input_per_million
+    output_cost = (output_tokens / per_million) * pricing.output_per_million
+    return input_cost + output_cost

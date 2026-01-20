@@ -28,7 +28,7 @@ jobs:
         run: uv sync
 
       - name: Run unit tests
-        run: uv run pytest -m unit --cov=deepagents_backends --cov-report=xml
+        run: uv run pytest --cov=tokenprice --cov-report=xml
 
       - name: Upload coverage
         uses: codecov/codecov-action@v5
