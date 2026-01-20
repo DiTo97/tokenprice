@@ -2,7 +2,7 @@
 
 [![PyPI version](https://img.shields.io/pypi/v/tokenprice)](https://pypi.org/project/tokenprice/)
 
-A Python library for fetching LLM token pricing across providers with multi-currency support.
+A Python library for fetching up-to-date LLM token pricing across providers, with a minimal public API.
 
 ## Why tokenprice?
 
@@ -13,9 +13,8 @@ Token pricing for LLMs changes frequently across different providers. This libra
 ## Features
 
 - Up-to-date LLM pricing from [LLMTracker](https://mrunreal.github.io/LLMTracker/)
-- Multi-currency support via forex-python
-- Built-in caching (6 hours for pricing data, 24 hours for exchange rates)
-- Simple, clean API
+- Async caching via async-lru with a 6-hour TTL for pricing data
+- Clean, typed data models (Pydantic)
 
 ## Installation
 
@@ -31,20 +30,31 @@ pip install tokenprice
 
 ## Usage
 
+The public API exposes only two async functions:
+- `get_pricing(model_id)`
+- `compute_cost(model_id, input_tokens, output_tokens)`
+
 ```python
-from tokenprice import get_model_price
+import asyncio
 
-# Get price in USD (default)
-price = get_model_price("gpt-4")
-print(f"Input: ${price['input']}/1M tokens")
-print(f"Output: ${price['output']}/1M tokens")
+from tokenprice import get_pricing, compute_cost
 
-# Get price in EUR
-price_eur = get_model_price("gpt-4", currency="EUR")
-print(f"Input: €{price_eur['input']}/1M tokens")
 
-# Get price in GBP
-price_gbp = get_model_price("claude-3-opus", currency="GBP")
+async def main():
+    model_id = "openai/gpt-4"
+
+    # Get pricing (cached transparently for ~6 hours)
+    pricing = await get_pricing(model_id)
+    print(f"Pricing for {model_id} ({pricing.currency}):")
+    print(f"  Input per 1M: ${pricing.input_per_million:.2f}")
+    print(f"  Output per 1M: ${pricing.output_per_million:.2f}")
+
+    # Compute total cost for a usage
+    total = await compute_cost(model_id, input_tokens=1000, output_tokens=500)
+    print(f"Total cost: ${total:.6f}")
+
+
+asyncio.run(main())
 ```
 
 ## Data Source
@@ -54,7 +64,9 @@ Pricing data is sourced from [LLMTracker](https://github.com/MrUnreal/LLMTracker
 https://raw.githubusercontent.com/MrUnreal/LLMTracker/main/data/current/prices.json
 ```
 
-Exchange rates are provided by forex-python and cached for 24 hours.
+Caching is provided via async-lru with a TTL bucket strategy aligned to LLMTracker's six-hour refresh cadence. Caching is fully transparent to callers of the public API.
+
+Note: Currency conversion is not included in the current release.
 
 ## Development
 
@@ -69,7 +81,7 @@ uv sync
 ### Running Tests
 
 ```bash
-pytest
+uv run pytest
 ```
 
 ### Linting
@@ -84,10 +96,19 @@ ruff check
 ruff format
 ```
 
+## API Surface
+
+Only `get_pricing` and `compute_cost` are part of the public API. Internal modules and models are not considered public and may change.
+
 ## Credits
 
 - Pricing data: [LLMTracker](https://github.com/MrUnreal/LLMTracker) by MrUnreal
 - Token counting: For estimating token counts, see [tokencost](https://github.com/AgentOps-AI/tokencost)
+
+## Roadmap
+
+- CLI to query pricing from the terminal (planned; see AGENTS-docs/cli-design.md)
+- Multi-currency conversion via forex-python with 24h cache (planned; see AGENTS-docs/caching-and-async.md)
 
 ## License
 
