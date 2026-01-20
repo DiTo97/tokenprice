@@ -1,31 +1,37 @@
 name: Test
+
 on:
   pull_request:
-    branches: [main, dev]
+    branches: [main]
+  push:
+    branches: [main]
 
 jobs:
-  build-lint-format-and-test:
+  unit-tests:
+    name: Unit Tests
     runs-on: ubuntu-latest
 
     steps:
-      - name: 🛎️ Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - name: 📦 Install uv
-        uses: astral-sh/setup-uv@v4
-
-      - name: 🐍 Set up Python
-        uses: actions/setup-python@v5
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
         with:
-          python-version-file: ".python-version"
+          version: "latest"
 
-      - name: 🦾 Install the project
-        run: |
-          uv sync --all-extras --dev
-          uv pip install -e .
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
 
-      - name: 💅 Link & Format Check
-        run: make check_code_quality
+      - name: Install dependencies
+        run: uv sync
 
-      - name: 🧪 Test
-        run: uv run pytest tests/
+      - name: Run unit tests
+        run: uv run pytest -m unit --cov=deepagents_backends --cov-report=xml
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v5
+        with:
+          files: ./coverage.xml
+          fail_ci_if_error: false
