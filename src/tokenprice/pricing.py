@@ -4,8 +4,9 @@ Data source: https://github.com/MrUnreal/LLMTracker
 Website: https://mrunreal.github.io/LLMTracker/
 """
 
-import httpx
 import time
+
+import httpx
 from async_lru import alru_cache
 
 from tokenprice.modeling import PricingData
