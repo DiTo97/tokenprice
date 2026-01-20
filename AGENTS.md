@@ -68,4 +68,4 @@ What not to do
 - Don't write hypey or overly verbose docs.
 
 Credits
-- Pricing data: LLMTracker (repo and website: https://raw.githubusercontent.com/MrUnreal/LLMTracker and https://mrunreal.github.io/LLMTracker/).
+- Pricing data: LLMTracker (repo: https://github.com/MrUnreal/LLMTracker, data endpoint: https://raw.githubusercontent.com/MrUnreal/LLMTracker/main/data/current/prices.json, website: https://mrunreal.github.io/LLMTracker/).
