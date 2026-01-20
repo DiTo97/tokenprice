@@ -6,7 +6,7 @@ from tokenprice import get_pricing
 async def main():
     model_id = "z-ai/glm-4.7"
     try:
-        pricing = await get_pricing(model_id, currency="USD")
+        pricing = await get_pricing(model_id, currency="CNY")
         print(f"{model_id} pricing ({pricing.currency}):")
         print(f"  Input per 1M tokens: ¥{pricing.input_per_million}")
         print(f"  Output per 1M tokens: ¥{pricing.output_per_million}")

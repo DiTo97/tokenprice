@@ -47,8 +47,8 @@ async def main():
     # Get pricing (cached transparently for ~6 hours)
     pricing = await get_pricing(model_id, currency="EUR")
     print(f"Pricing for {model_id} ({pricing.currency}):")
-    print(f"  Input per 1M tokens: ${pricing.input_per_million:.2f}")
-    print(f"  Output per 1M tokens: ${pricing.output_per_million:.2f}")
+    print(f"  Input per 1M tokens: €{pricing.input_per_million:.2f}")
+    print(f"  Output per 1M tokens: €{pricing.output_per_million:.2f}")
 
     # Compute total cost for a usage
     total = await compute_cost(model_id, input_tokens=1000, output_tokens=500, currency="EUR")
