@@ -12,7 +12,10 @@ from tokenprice.core import compute_cost, get_pricing
 def main(): ...
 
 
-@main.command("pricing", help="Show live input/output price per 1M tokens for a model, e.g., openai/gpt-5.2")
+@main.command(
+    "pricing",
+    help="Show live input/output price per 1M tokens for a model, e.g., openai/gpt-5.2",
+)
 @click.argument("model", metavar="MODEL")
 @click.option(
     "--currency",
@@ -56,7 +59,10 @@ def price_command(model: str, currency: str, jq: bool) -> None:
     asyncio.run(_run())
 
 
-@main.command("cost", help="Compute total cost for a given budget of input/output tokens for a model, e.g., openai/gpt-5.2")
+@main.command(
+    "cost",
+    help="Compute total cost for a given budget of input/output tokens for a model, e.g., openai/gpt-5.2",
+)
 @click.argument("model", metavar="MODEL")
 @click.option("--in", "input_tokens", type=int, required=True, help="Input tokens")
 @click.option("--out", "output_tokens", type=int, required=True, help="Output tokens")
@@ -82,7 +88,10 @@ def cost_command(
     async def _run() -> None:
         try:
             total = await compute_cost(
-                model, input_tokens=input_tokens, output_tokens=output_tokens, currency=currency
+                model,
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+                currency=currency,
             )
         except (ValueError, RuntimeError) as e:
             raise click.ClickException(str(e)) from e
