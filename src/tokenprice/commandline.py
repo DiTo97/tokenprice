@@ -25,18 +25,19 @@ def main(): ...
     help="Target currency code (e.g., USD, EUR). Uses cached FX rates.",
 )
 @click.option(
-    "--jq",
+    "--json",
+    "as_json",
     is_flag=True,
     help="Output machine-readable JSON",
 )
-def price_command(model: str, currency: str, jq: bool) -> None:
+def price_command(model: str, currency: str, as_json: bool) -> None:
     async def _run() -> None:
         try:
             pricing = await get_pricing(model, currency=currency)
         except (ValueError, RuntimeError) as e:
             raise click.ClickException(str(e)) from e
 
-        if jq:
+        if as_json:
             click.echo(
                 json.dumps(
                     {
@@ -74,7 +75,8 @@ def price_command(model: str, currency: str, jq: bool) -> None:
     help="Target currency code (e.g., USD, EUR). Uses cached FX rates.",
 )
 @click.option(
-    "--jq",
+    "--json",
+    "as_json",
     is_flag=True,
     help="Output machine-readable JSON",
 )
@@ -83,7 +85,7 @@ def cost_command(
     input_tokens: int,
     output_tokens: int,
     currency: str,
-    jq: bool,
+    as_json: bool,
 ) -> None:
     async def _run() -> None:
         try:
@@ -96,7 +98,7 @@ def cost_command(
         except (ValueError, RuntimeError) as e:
             raise click.ClickException(str(e)) from e
 
-        if jq:
+        if as_json:
             click.echo(
                 json.dumps(
                     {
