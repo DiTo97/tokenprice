@@ -1,11 +1,13 @@
 """Public facade API for tokenprice.
 
-Exposes only:
-- get_pricing(model_id)
-- compute_cost(model_id, input_tokens, output_tokens)
+Exposes async and sync versions:
+- get_pricing(model_id, currency="USD") [async]
+- get_pricing_sync(model_id, currency="USD") [sync]
+- compute_cost(model_id, input_tokens, output_tokens, currency="USD") [async]
+- compute_cost_sync(model_id, input_tokens, output_tokens, currency="USD") [sync]
 
 Under the hood, uses async cached pricing data from LLMTracker and optional
-forex conversion via forex-python (cached for 24h).
+forex conversion via JSDelivr currency API (cached for 24h).
 """
 
 from __future__ import annotations
@@ -14,6 +16,7 @@ from decimal import Decimal
 
 from tokenprice.currency import get_usd_rate
 from tokenprice.pricing import get_pricing_data
+from tokenprice.safeasyncio import make_sync
 
 
 async def get_pricing(model_id: str, currency: str = "USD"):
@@ -81,3 +84,8 @@ async def compute_cost(
     input_cost = (input_tokens / per_million) * pricing.input_per_million
     output_cost = (output_tokens / per_million) * pricing.output_per_million
     return input_cost + output_cost
+
+
+# Sync wrappers using safeasyncio
+get_pricing_sync = make_sync()(get_pricing)
+compute_cost_sync = make_sync()(compute_cost)

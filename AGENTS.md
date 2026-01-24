@@ -13,12 +13,14 @@ This file orients AI coding agents working on tokenprice. Keep it concise, follo
   - src/tokenprice/pricing.py — async fetch + 6h TTL cache of LLMTracker JSON.
   - src/tokenprice/currency.py — USD base rates from JSDelivr currency API with 24h TTL cache.
   - src/tokenprice/modeling.py — Pydantic models for dataset, search helpers.
-  - src/tokenprice/core.py — public facade exposing `get_pricing` and `compute_cost`.
-  - src/tokenprice/__init__.py — exports only `get_pricing` and `compute_cost`.
+  - src/tokenprice/core.py — public facade exposing async and sync versions of `get_pricing` and `compute_cost`.
+  - src/tokenprice/safeasyncio.py — utilities for safely running async code in sync contexts.
+  - src/tokenprice/__init__.py — exports `get_pricing`, `get_pricing_sync`, `compute_cost`, and `compute_cost_sync`.
 - Current state (truth):
   - Pricing fetch + cache implemented.
   - CLI implemented with Click: `tokenprice pricing` and `tokenprice cost`.
   - Multi-currency implemented: daily USD base rates cached 24h from JSDelivr currency API.
+  - Dual API (async + sync): Both versions share the same underlying async cache via safeasyncio module.
 - Project map: see repository tree; tests live in tests/test_*.py.
 
 ## How
@@ -44,8 +46,12 @@ Policies
 - Scope: Pricing data library only. Do not add token counting features.
 
 Public API policy
-- Expose only `get_pricing(model_id, currency="USD")` and `compute_cost(model_id, input_tokens, output_tokens, currency="USD")`.
+- Expose async and sync versions:
+  - Async: `get_pricing(model_id, currency="USD")` and `compute_cost(model_id, input_tokens, output_tokens, currency="USD")`
+  - Sync: `get_pricing_sync(model_id, currency="USD")` and `compute_cost_sync(model_id, input_tokens, output_tokens, currency="USD")`
+- Both APIs share the same underlying async cache (no duplicate fetches).
 - Caching must remain transparent to callers (no cache controls in public API).
+- Sync wrappers use safeasyncio module to safely run async code.
 
 Progressive disclosure
 - Workflow and reporting: AGENTS-docs/workflow.md
