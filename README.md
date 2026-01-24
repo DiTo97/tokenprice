@@ -31,9 +31,17 @@ pip install tokenprice
 
 ## Usage
 
-The public API exposes only two async functions:
+The public API exposes both async and sync functions:
+
+**Async API:**
 - `get_pricing(model_id, currency="USD")`
 - `compute_cost(model_id, input_tokens, output_tokens, currency="USD")`
+
+**Sync API:**
+- `get_pricing_sync(model_id, currency="USD")`
+- `compute_cost_sync(model_id, input_tokens, output_tokens, currency="USD")`
+
+### Async Example
 
 ```python
 import asyncio
@@ -57,6 +65,28 @@ async def main():
 
 asyncio.run(main())
 ```
+
+### Sync Example
+
+For simpler scripts, Jupyter notebooks, or environments where async is inconvenient, use the sync versions:
+
+```python
+from tokenprice import get_pricing_sync, compute_cost_sync
+
+model_id = "openai/gpt-5.2"
+
+# Get pricing (cached transparently for ~6 hours)
+pricing = get_pricing_sync(model_id, currency="EUR")
+print(f"Pricing for {model_id} ({pricing.currency}):")
+print(f"  Input per 1M tokens: €{pricing.input_per_million:.2f}")
+print(f"  Output per 1M tokens: €{pricing.output_per_million:.2f}")
+
+# Compute total cost for a usage
+total = compute_cost_sync(model_id, input_tokens=1000, output_tokens=500, currency="EUR")
+print(f"Total cost (EUR): €{total:.6f}")
+```
+
+Both sync and async APIs share the same underlying cache, so mixing them won't cause duplicate fetches.
 
 ## Data Source
 
@@ -105,7 +135,11 @@ Pre-commit hooks run in CI via GitHub Actions using `uv` (see [.github/workflows
 
 ## API Surface
 
-Only `get_pricing` and `compute_cost` are part of the public API. Internal modules and models are not considered public and may change.
+The public API includes both async and sync versions:
+- Async: `get_pricing`, `compute_cost`
+- Sync: `get_pricing_sync`, `compute_cost_sync`
+
+Internal modules and models are not considered public and may change. Both APIs share the same cache, so you can mix async and sync calls without performance penalty.
 
 ## Credits
 
