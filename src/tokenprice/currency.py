@@ -73,13 +73,23 @@ async def get_usd_rate(currency: str) -> Decimal:
         Decimal rate such that `amount_usd * rate` yields amount in `currency`.
 
     Raises:
-        ValueError: If the currency is not supported.
+        ValueError: If the currency is not supported (includes suggestion if available).
     """
     code = currency.upper()
     if code == "USD":
         return Decimal("1")
     rates = await get_usd_rates()
-    try:
+
+    if code in rates:
         return rates[code]
-    except KeyError as e:
-        raise ValueError(f"Unsupported currency: {currency}") from e
+
+    # Currency not found - try to suggest a similar one for the error message
+    from tokenprice.suggestions import suggest_currency
+
+    match = suggest_currency(query=code, currency_codes=list(rates.keys()))
+    if match is not None:
+        raise ValueError(
+            f"Unsupported currency: {currency}. Did you mean '{match.match}'?"
+        )
+
+    raise ValueError(f"Unsupported currency: {currency}")

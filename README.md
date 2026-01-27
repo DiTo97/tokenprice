@@ -88,6 +88,22 @@ print(f"Total cost (EUR): €{total:.6f}")
 
 Both sync and async APIs share the same underlying cache, so mixing them won't cause duplicate fetches.
 
+### Helpful Error Messages
+
+When you make a typo in a model ID or currency code, tokenprice provides helpful "Did you mean?" suggestions:
+
+```python
+from tokenprice import get_pricing_sync
+
+# Typo in model name: "gpt4" instead of "gpt-4"
+get_pricing_sync("openai/gpt4")
+# ValueError: Model not found: openai/gpt4. Did you mean 'openai/gpt-4'?
+
+# Typo in currency: "ERU" instead of "EUR"
+get_pricing_sync("openai/gpt-4", currency="ERU")
+# ValueError: Unsupported currency: ERU. Did you mean 'EUR'?
+```
+
 ## Data Source
 
 Pricing data is sourced from [LLMTracker](https://github.com/MrUnreal/LLMTracker), which aggregates and updates pricing information from various LLM providers every six hours. The raw data is available at:

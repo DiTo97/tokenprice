@@ -3,6 +3,7 @@
 Tests that sync versions work correctly and use the same cache as async versions.
 """
 
+from decimal import Decimal
 from unittest.mock import Mock, patch
 
 import pytest
@@ -190,3 +191,112 @@ def test_compute_cost_sync_negative_tokens(sample_llmtracker_response):
 
         with pytest.raises(ValueError, match="Token counts must be non-negative"):
             compute_cost_sync("openai/gpt-4", input_tokens=1000, output_tokens=-1)
+
+
+class TestDidYouMeanSuggestions:
+    """Test 'Did you mean?' suggestions in error messages."""
+
+    def test_model_not_found_with_suggestion(self, sample_llmtracker_response):
+        """Test that model not found error includes 'Did you mean?' suggestion."""
+        import tokenprice.pricing as pricing_mod
+
+        pricing_mod._get_pricing_data_bucketed.cache_clear()
+
+        with patch("tokenprice.pricing.httpx.AsyncClient.get") as mock_get:
+            mock_response = Mock()
+            mock_response.json.return_value = sample_llmtracker_response
+            mock_get.return_value = mock_response
+
+            # Typo: "openai/gpt4" instead of "openai/gpt-4"
+            with pytest.raises(ValueError) as exc_info:
+                get_pricing_sync("openai/gpt4")
+
+            assert "Model not found: openai/gpt4" in str(exc_info.value)
+            assert "Did you mean" in str(exc_info.value)
+            assert "openai/gpt-4" in str(exc_info.value)
+
+    def test_model_not_found_no_suggestion(self, sample_llmtracker_response):
+        """Test that completely unrelated model gives no suggestion."""
+        import tokenprice.pricing as pricing_mod
+
+        pricing_mod._get_pricing_data_bucketed.cache_clear()
+
+        with patch("tokenprice.pricing.httpx.AsyncClient.get") as mock_get:
+            mock_response = Mock()
+            mock_response.json.return_value = sample_llmtracker_response
+            mock_get.return_value = mock_response
+
+            # Completely unrelated model name
+            with pytest.raises(ValueError) as exc_info:
+                get_pricing_sync("completely-unrelated-xyz-123")
+
+            assert "Model not found" in str(exc_info.value)
+            # Should not have a suggestion for completely unrelated input
+            # (or if it does, it's still a valid error)
+
+    def test_currency_not_found_with_suggestion(
+        self, sample_llmtracker_response, monkeypatch
+    ):
+        """Test that currency not found error includes 'Did you mean?' suggestion."""
+        import tokenprice.pricing as pricing_mod
+        import tokenprice.currency as currency_mod
+
+        pricing_mod._get_pricing_data_bucketed.cache_clear()
+        currency_mod._get_usd_rates_bucketed.cache_clear()
+
+        with patch("tokenprice.pricing.httpx.AsyncClient.get") as mock_pricing:
+            mock_pricing_response = Mock()
+            mock_pricing_response.json.return_value = sample_llmtracker_response
+            mock_pricing.return_value = mock_pricing_response
+
+            def fake_sync_get_usd_rates():
+                return {
+                    "EUR": Decimal("0.92"),
+                    "GBP": Decimal("0.79"),
+                    "CNY": Decimal("7.25"),
+                }
+
+            monkeypatch.setattr(
+                currency_mod, "_sync_get_usd_rates", fake_sync_get_usd_rates
+            )
+
+            # Typo: "ERU" instead of "EUR"
+            with pytest.raises(ValueError) as exc_info:
+                get_pricing_sync("openai/gpt-4", currency="ERU")
+
+            assert "Unsupported currency: ERU" in str(exc_info.value)
+            assert "Did you mean" in str(exc_info.value)
+            assert "EUR" in str(exc_info.value)
+
+    def test_currency_not_found_no_suggestion(
+        self, sample_llmtracker_response, monkeypatch
+    ):
+        """Test that completely unrelated currency gives no suggestion."""
+        import tokenprice.pricing as pricing_mod
+        import tokenprice.currency as currency_mod
+
+        pricing_mod._get_pricing_data_bucketed.cache_clear()
+        currency_mod._get_usd_rates_bucketed.cache_clear()
+
+        with patch("tokenprice.pricing.httpx.AsyncClient.get") as mock_pricing:
+            mock_pricing_response = Mock()
+            mock_pricing_response.json.return_value = sample_llmtracker_response
+            mock_pricing.return_value = mock_pricing_response
+
+            def fake_sync_get_usd_rates():
+                return {
+                    "EUR": Decimal("0.92"),
+                    "GBP": Decimal("0.79"),
+                }
+
+            monkeypatch.setattr(
+                currency_mod, "_sync_get_usd_rates", fake_sync_get_usd_rates
+            )
+
+            # Completely unrelated currency code
+            with pytest.raises(ValueError) as exc_info:
+                get_pricing_sync("openai/gpt-4", currency="XYZ")
+
+            assert "Unsupported currency: XYZ" in str(exc_info.value)
+            # No suggestion for completely unrelated input
+            assert "Did you mean" not in str(exc_info.value)

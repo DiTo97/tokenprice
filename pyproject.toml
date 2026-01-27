@@ -9,6 +9,7 @@ dependencies = [
   "pydantic>=2.12.5",
   "async-lru>=2.0.4",
   "click>=8.1.7",
+  "thefuzz>=0.22.1",
 ]
 
 [build-system]
