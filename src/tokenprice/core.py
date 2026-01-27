@@ -8,6 +8,9 @@ Exposes async and sync versions:
 
 Under the hood, uses async cached pricing data from LLMTracker and optional
 forex conversion via JSDelivr currency API (cached for 24h).
+
+When lookups fail, errors include "Did you mean X?" suggestions when a close
+match is found.
 """
 
 from __future__ import annotations
@@ -24,23 +27,32 @@ async def get_pricing(model_id: str, currency: str = "USD"):
 
     Args:
         model_id: The model identifier (e.g., 'openai/gpt-4')
+        currency: Target currency code (default: USD). Case-insensitive.
 
     Returns:
         PricingInfo for the model, priced in the requested currency.
 
     Raises:
-        ValueError: If the model is not found.
+        ValueError: If the model or currency is not found (includes suggestions).
     """
     data = await get_pricing_data()
     model = data.get_model(model_id)
     if model is None:
+        # Try to suggest a similar model for the error message
+        suggestion = data.suggest_model(model_id)
+        if suggestion:
+            raise ValueError(
+                f"Model not found: {model_id}. Did you mean '{suggestion}'?"
+            )
         raise ValueError(f"Model not found: {model_id}")
+
     # If USD requested, return as-is
     target = currency.upper()
     if target == "USD":
         return model.pricing
 
     # Convert pricing from USD to target currency using Decimal
+    # Note: get_usd_rate already includes "Did you mean" in its error
     rate = await get_usd_rate(target)
     inp = Decimal(str(model.pricing.input_per_million)) * rate
     outp = Decimal(str(model.pricing.output_per_million)) * rate
@@ -68,9 +80,10 @@ async def compute_cost(
         model_id: The model identifier.
         input_tokens: Number of input tokens.
         output_tokens: Number of output tokens.
+        currency: Target currency code (default: USD). Case-insensitive.
 
     Returns:
-        Total cost as a float in the model's pricing currency.
+        Total cost as a float in the requested currency.
 
     Raises:
         ValueError: If the model is not found or token counts are negative.

@@ -88,6 +88,27 @@ class PricingData(BaseModel):
         """
         return self.models.get(model_id)
 
+    def suggest_model(self, query: str) -> str | None:
+        """Suggest a model ID for a failed lookup (for error messages).
+
+        Args:
+            query: The model identifier the user provided.
+
+        Returns:
+            Suggested model_id string if a close match is found, else None.
+        """
+        from tokenprice.suggestions import suggest_model
+
+        display_names = {m.model_id: m.display_name for m in self.models.values()}
+        match = suggest_model(
+            query=query,
+            model_ids=list(self.models.keys()),
+            display_names=display_names,
+        )
+        if match is not None:
+            return match.match
+        return None
+
     def get_provider(self, provider_id: str) -> ProviderInfo | None:
         """Get provider information by provider ID.
 
