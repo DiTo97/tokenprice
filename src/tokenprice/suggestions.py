@@ -120,9 +120,7 @@ def suggest_model(
     elif model_result:
         return FuzzyMatch(query=query, match=model_result[0], score=model_result[1])
     elif display_result:
-        return FuzzyMatch(
-            query=query, match=display_result[0], score=display_result[1]
-        )
+        return FuzzyMatch(query=query, match=display_result[0], score=display_result[1])
 
     return None
 
