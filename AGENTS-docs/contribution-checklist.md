@@ -26,7 +26,7 @@ uv run pytest -q
 ## Documentation
 
 - README updated if user-facing behavior changed
-- LLMTracker credit present where relevant
+- tokentracking credit present where relevant (also credit upstream LLMTracker)
 - No token counting features introduced; reference tokencost when relevant
 
 ## Final Report

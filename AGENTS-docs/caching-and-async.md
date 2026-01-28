@@ -8,7 +8,7 @@ Status summary
 
 ## Pricing Data Cache (implemented)
 
-- Source: LLMTracker prices JSON
+- Source: tokentracking prices JSON (fork of LLMTracker with cache pricing)
 - TTL: 6 hours (aligned with upstream update frequency)
 - Behavior:
   - Cache successful fetches for 6 hours using async-lru TTL.

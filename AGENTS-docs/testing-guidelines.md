@@ -10,7 +10,7 @@ All work follows TDD: write failing tests before implementation. Use pytest for 
 
 ## External API Mocking
 
-- LLMTracker pricing fetches: mock network responses
+- tokentracking pricing fetches: mock network responses
 - forex-python exchange: planned — mock once implemented
 - Use `unittest.mock` (patch) or pytest fixtures to inject doubles
 

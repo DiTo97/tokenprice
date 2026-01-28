@@ -2,17 +2,47 @@
 
 [![PyPI version](https://img.shields.io/pypi/v/tokenprice)](https://pypi.org/project/tokenprice/)
 
-API pricing estimates for 1k+ LLMs from [LLMTracker](https://mrunreal.github.io/LLMTracker) with multi-currency support.
+API pricing estimates for 1k+ LLMs from [tokentracking](https://github.com/DiTo97/tokentracking) with multi-currency support.
+
+```mermaid
+flowchart LR
+    subgraph Your Application
+        A[🤖 LLM API Call]
+        B[📊 Usage Data]
+    end
+
+    subgraph tokenprice
+        C[get_pricing / compute_cost]
+        D[(Cache<br/>6h TTL)]
+    end
+
+    subgraph Data Sources
+        E[tokentracking<br/>prices.json]
+        F[JSDelivr<br/>Currency API]
+    end
+
+    A --> B
+    B --> C
+    C <--> D
+    D -.->|miss| E
+    D -.->|FX miss| F
+    C --> G[💰 Cost in USD/EUR/...]
+
+    style A fill:#e1f5fe
+    style G fill:#c8e6c9
+    style C fill:#fff3e0
+    style D fill:#fce4ec
+```
 
 ## Why tokenprice?
 
-Token pricing for LLMs changes frequently across different providers. This library provides up-to-date pricing information by leveraging [LLMTracker](https://github.com/MrUnreal/LLMTracker), which updates pricing data every six hours from various sources.
+Token pricing for LLMs changes frequently across different providers. This library provides up-to-date pricing information by leveraging [tokentracking](https://github.com/DiTo97/tokentracking) (a fork of [LLMTracker](https://github.com/MrUnreal/LLMTracker) with cache pricing support), which updates pricing data every six hours from various sources.
 
 **Important:** This library does **not** estimate token counts from strings or messages. Any estimation would be too approximate for anything beyond plain text, and the [tokencost](https://github.com/AgentOps-AI/tokencost) package already handles that use case well. tokenprice focuses solely on providing accurate, current pricing data.
 
 ## Features
 
-- Up-to-date LLM pricing from [LLMTracker](https://mrunreal.github.io/LLMTracker/)
+- Up-to-date LLM pricing from [tokentracking](https://github.com/DiTo97/tokentracking)
 - Async caching via async-lru with a 6-hour TTL for pricing data
 - Multi-currency conversion via JSDelivr currency API with a 24-hour cached USD rates map
 - Clean, typed data models (Pydantic)
@@ -106,14 +136,14 @@ get_pricing_sync("openai/gpt-4", currency="ERU")
 
 ## Data Source
 
-Pricing data is sourced from [LLMTracker](https://github.com/MrUnreal/LLMTracker), which aggregates and updates pricing information from various LLM providers every six hours. The raw data is available at:
+Pricing data is sourced from [tokentracking](https://github.com/DiTo97/tokentracking), a fork of [LLMTracker](https://github.com/MrUnreal/LLMTracker) with cache pricing support. The data is updated every six hours from various LLM providers. The raw data is available at:
 ```
-https://raw.githubusercontent.com/MrUnreal/LLMTracker/main/data/current/prices.json
+https://raw.githubusercontent.com/DiTo97/tokentracking/main/data/current/prices.json
 ```
 
-Caching uses async-lru with a 6-hour TTL aligned to LLMTracker's refresh cadence. Caching is fully transparent to callers of the public API.
+Caching uses async-lru with a 6-hour TTL aligned to tokentracking's refresh cadence. Caching is fully transparent to callers of the public API.
 
-Note: Pricing data from LLMTracker is denominated in USD; currency conversion uses daily USD base rates from the JSDelivr currency API with a 24h cache (keys uppercased).
+Note: Pricing data from tokentracking is denominated in USD; currency conversion uses daily USD base rates from the JSDelivr currency API with a 24h cache (keys uppercased).
 
 ## Development
 
@@ -159,7 +189,8 @@ Internal modules and models are not considered public and may change. Both APIs 
 
 ## Credits
 
-- Pricing data: [LLMTracker](https://github.com/MrUnreal/LLMTracker) by MrUnreal
+- Pricing data: [tokentracking](https://github.com/DiTo97/tokentracking) (fork with cache pricing support)
+- Upstream: [LLMTracker](https://github.com/MrUnreal/LLMTracker) by MrUnreal
 
 ## CLI
 
