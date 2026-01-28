@@ -27,7 +27,7 @@ This file orients AI coding agents working on tokenprice. Keep it concise, follo
 Follow the mandatory workflow in AGENTS-docs/workflow.md. In short: plan → review → TDD (failing) → implement (minimal) → verify → report.
 
 ### Self-Contained Tasks
-When a user requests a self-contained task (e.g., a new feature, critical bug fix significant refactoring, or complex enhancement), follow this GitHub-based workflow:
+When a user requests a self-contained task (e.g., a new feature, critical bug fix, significant refactoring, or complex enhancement), follow this GitHub-based workflow:
 
 1. **Create an Issue**: Use the GitHub MCP server or the GitHub CLI (`gh`) to create a detailed issue describing the task, requirements, and expected outcomes.
 2. **Create a Linked Branch and Checkout**: Create a branch linked to the issue and checkout: `gh issue develop <issue> --checkout`
