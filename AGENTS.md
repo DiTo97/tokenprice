@@ -26,14 +26,13 @@ This file orients AI coding agents working on tokenprice. Keep it concise, follo
 ## How
 Follow the mandatory workflow in AGENTS-docs/workflow.md. In short: plan → review → TDD (failing) → implement (minimal) → verify → report.
 
-### Large, Self-Contained Tasks
-When a user requests a large, self-contained task (e.g., a new feature, significant refactoring, or complex enhancement), follow this GitHub-based workflow:
+### Self-Contained Tasks
+When a user requests a self-contained task (e.g., a new feature, critical bug fix, significant refactoring, or complex enhancement), follow this GitHub-based workflow:
 
-1. **Create an Issue**: Use the GitHub MCP server to create a detailed issue describing the task, requirements, and expected outcomes.
-2. **Create a Draft PR**: Create a draft pull request with a precise description linking to the issue. Include acceptance criteria and implementation plan.
-3. **Create and Link Branch**: Create a feature branch (e.g., `feature/task-name` or `fix/issue-name`) and link it to the issue and PR.
-4. **Switch Branch Locally**: Check out the newly created branch in the local repository.
-5. **Begin Work**: Follow the standard workflow (plan → review → TDD → implement → verify → report) on the feature branch.
+1. **Create an Issue**: Use the GitHub MCP server or the GitHub CLI (`gh`) to create a detailed issue describing the task, requirements, and expected outcomes.
+2. **Create a Linked Branch and Checkout**: Create a branch linked to the issue and checkout: `gh issue develop <issue> --checkout`
+3. **Create a Draft PR**: Create a draft pull request with a precise description linking to the issue. Include acceptance criteria and implementation plan. `gh pr create --draft`
+4. **Begin Work**: Follow the standard workflow (plan → review → TDD → implement → verify → report) on the feature branch.
 
 This ensures proper tracking, collaboration, and review process for substantial changes.
 
