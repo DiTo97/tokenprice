@@ -21,6 +21,7 @@ This file orients AI coding agents working on tokenprice. Keep it concise, follo
   - CLI implemented with Click: `tokenprice pricing` and `tokenprice cost`.
   - Multi-currency implemented: daily USD base rates cached 24h from JSDelivr currency API.
   - Dual API (async + sync): Both versions share the same underlying async cache via safeasyncio module.
+  - Cache pricing support: `PricingInfo` includes `cache_read_per_million` and `cache_creation_per_million` fields; `compute_cost` accepts `cache_read_tokens` and `cache_creation_tokens` kwargs.
 - Project map: see repository tree; tests live in tests/test_*.py.
 
 ## How
@@ -57,8 +58,10 @@ Policies
 
 Public API policy
 - Expose async and sync versions:
-  - Async: `get_pricing(model_id, currency="USD")` and `compute_cost(model_id, input_tokens, output_tokens, currency="USD")`
-  - Sync: `get_pricing_sync(model_id, currency="USD")` and `compute_cost_sync(model_id, input_tokens, output_tokens, currency="USD")`
+  - Async: `get_pricing(model_id, currency="USD")` and `compute_cost(model_id, input_tokens, output_tokens, currency="USD", *, cache_read_tokens=0, cache_creation_tokens=0)`
+  - Sync: `get_pricing_sync(model_id, currency="USD")` and `compute_cost_sync(model_id, input_tokens, output_tokens, currency="USD", *, cache_read_tokens=0, cache_creation_tokens=0)`
+- `PricingInfo` includes optional `cache_read_per_million` and `cache_creation_per_million` fields (may be `None` if provider doesn't support caching).
+- Cache pricing falls back to input price when not available in source data.
 - Both APIs share the same underlying async cache (no duplicate fetches).
 - Caching must remain transparent to callers (no cache controls in public API).
 - Sync wrappers use safeasyncio module to safely run async code.

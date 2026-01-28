@@ -29,6 +29,34 @@ class TestPricingInfo:
         pricing = PricingInfo(input_per_million=2.5, output_per_million=10.0)
         assert pricing.currency == "USD"
 
+    def test_pricing_info_with_cache_pricing(self):
+        """Test PricingInfo with cache pricing fields."""
+        pricing = PricingInfo(
+            input_per_million=3.0,
+            output_per_million=15.0,
+            cache_read_per_million=0.3,
+            cache_creation_per_million=3.75,
+            currency="USD",
+        )
+        assert pricing.cache_read_per_million == 0.3
+        assert pricing.cache_creation_per_million == 3.75
+
+    def test_pricing_info_cache_pricing_defaults_to_input_price(self):
+        """Test that cache pricing fields default to input price."""
+        pricing = PricingInfo(input_per_million=2.5, output_per_million=10.0)
+        assert pricing.cache_read_per_million == 2.5
+        assert pricing.cache_creation_per_million == 2.5
+
+    def test_pricing_info_partial_cache_pricing(self):
+        """Test PricingInfo with only cache_read (cache_creation defaults to input)."""
+        pricing = PricingInfo(
+            input_per_million=3.0,
+            output_per_million=15.0,
+            cache_read_per_million=0.3,
+        )
+        assert pricing.cache_read_per_million == 0.3
+        assert pricing.cache_creation_per_million == 3.0
+
 
 class TestSourceInfo:
     """Test SourceInfo model."""
