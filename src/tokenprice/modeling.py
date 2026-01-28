@@ -2,11 +2,15 @@
 
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 class PricingInfo(BaseModel):
-    """Pricing information for a model."""
+    """Pricing information for a model.
+
+    Cache pricing fields default to input price when not available from the
+    data source, ensuring consistent behavior across all models.
+    """
 
     input_per_million: float = Field(
         description="Price per million input tokens in the specified currency"
@@ -14,7 +18,24 @@ class PricingInfo(BaseModel):
     output_per_million: float = Field(
         description="Price per million output tokens in the specified currency"
     )
+    cache_read_per_million: float | None = Field(
+        default=None,
+        description="Price per million cache read tokens (for prompt caching)",
+    )
+    cache_creation_per_million: float | None = Field(
+        default=None,
+        description="Price per million cache creation tokens (for prompt caching)",
+    )
     currency: str = Field(default="USD", description="Currency code (e.g., USD, EUR)")
+
+    @model_validator(mode="after")
+    def set_cache_defaults(self) -> "PricingInfo":
+        """Set cache pricing to input price when not available."""
+        if self.cache_read_per_million is None:
+            self.cache_read_per_million = self.input_per_million
+        if self.cache_creation_per_million is None:
+            self.cache_creation_per_million = self.input_per_million
+        return self
 
 
 class SourceInfo(BaseModel):

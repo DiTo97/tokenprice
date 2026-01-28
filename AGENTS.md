@@ -3,14 +3,14 @@
 This file orients AI coding agents working on tokenprice. Keep it concise, follow progressive disclosure, and always link to detailed docs in AGENTS-docs.
 
 ## Why
-- Provide up-to-date LLM token pricing across providers using LLMTracker (updates ~6h).
+- Provide up-to-date LLM token pricing across providers using tokentracking (updates ~6h).
 - Focus on pricing data only — no token counting. For counting, see tokencost.
-- Credit LLMTracker in code and docs: repo and website.
+- Credit tokentracking and upstream LLMTracker in code and docs.
 
 ## What
 - Stack: Python 3.12, `httpx` (async), `async-lru` (TTL), `pydantic` models, `pytest` (+pytest-asyncio), `ruff`, package manager `uv`.
 - Key modules:
-  - src/tokenprice/pricing.py — async fetch + 6h TTL cache of LLMTracker JSON.
+  - src/tokenprice/pricing.py — async fetch + 6h TTL cache of tokentracking JSON.
   - src/tokenprice/currency.py — USD base rates from JSDelivr currency API with 24h TTL cache.
   - src/tokenprice/modeling.py — Pydantic models for dataset, search helpers.
   - src/tokenprice/core.py — public facade exposing async and sync versions of `get_pricing` and `compute_cost`.
@@ -21,6 +21,7 @@ This file orients AI coding agents working on tokenprice. Keep it concise, follo
   - CLI implemented with Click: `tokenprice pricing` and `tokenprice cost`.
   - Multi-currency implemented: daily USD base rates cached 24h from JSDelivr currency API.
   - Dual API (async + sync): Both versions share the same underlying async cache via safeasyncio module.
+  - Cache pricing support: `PricingInfo` includes `cache_read_per_million` and `cache_creation_per_million` fields; `compute_cost` accepts `cache_read_tokens` and `cache_creation_tokens` kwargs.
 - Project map: see repository tree; tests live in tests/test_*.py.
 
 ## How
@@ -57,8 +58,10 @@ Policies
 
 Public API policy
 - Expose async and sync versions:
-  - Async: `get_pricing(model_id, currency="USD")` and `compute_cost(model_id, input_tokens, output_tokens, currency="USD")`
-  - Sync: `get_pricing_sync(model_id, currency="USD")` and `compute_cost_sync(model_id, input_tokens, output_tokens, currency="USD")`
+  - Async: `get_pricing(model_id, currency="USD")` and `compute_cost(model_id, input_tokens, output_tokens, currency="USD", *, cache_read_tokens=0, cache_creation_tokens=0)`
+  - Sync: `get_pricing_sync(model_id, currency="USD")` and `compute_cost_sync(model_id, input_tokens, output_tokens, currency="USD", *, cache_read_tokens=0, cache_creation_tokens=0)`
+- `PricingInfo` includes optional `cache_read_per_million` and `cache_creation_per_million` fields (may be `None` if provider doesn't support caching).
+- Cache pricing falls back to input price when not available in source data.
 - Both APIs share the same underlying async cache (no duplicate fetches).
 - Caching must remain transparent to callers (no cache controls in public API).
 - Sync wrappers use safeasyncio module to safely run async code.
@@ -72,9 +75,9 @@ Progressive disclosure
 
 Design decisions
 - No Token Counting: different tokenizers and use-cases make estimates unreliable; https://github.com/AgentOps-AI/tokencost already covers this very well.
-- Data Source: LLMTracker JSON at https://raw.githubusercontent.com/MrUnreal/LLMTracker/main/data/current/prices.json
+- Data Source: tokentracking JSON at https://raw.githubusercontent.com/DiTo97/tokentracking/main/data/current/prices.json (fork of LLMTracker with cache pricing support).
 - Multi-currency: USD base via JSDelivr currency API (https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json) cached daily (24h) with uppercased currency tags.
-- CLI: planned (Typer recommended); not implemented yet.
+- CLI: implemented with Click: `tokenprice pricing` and `tokenprice cost`.
 
 What not to do
 - Don't fetch more often than needed; rely on 6h cache.
@@ -83,4 +86,5 @@ What not to do
 - Don't write hypey or overly verbose docs.
 
 Credits
-- Pricing data: LLMTracker (repo: https://github.com/MrUnreal/LLMTracker, data endpoint: https://raw.githubusercontent.com/MrUnreal/LLMTracker/main/data/current/prices.json, website: https://mrunreal.github.io/LLMTracker/).
+- Pricing data: tokentracking (repo: https://github.com/DiTo97/tokentracking, data endpoint: https://raw.githubusercontent.com/DiTo97/tokentracking/main/data/current/prices.json).
+- Upstream: LLMTracker by MrUnreal (https://github.com/MrUnreal/LLMTracker).

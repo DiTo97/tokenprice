@@ -300,3 +300,206 @@ class TestDidYouMeanSuggestions:
             assert "Unsupported currency: XYZ" in str(exc_info.value)
             # No suggestion for completely unrelated input
             assert "Did you mean" not in str(exc_info.value)
+
+
+class TestCachePricing:
+    """Tests for cache pricing support."""
+
+    @pytest.fixture
+    def sample_response_with_cache_pricing(self) -> dict:
+        """Sample response with cache pricing fields."""
+        return {
+            "generated_at": "2026-01-20T06:05:10.791612+00:00",
+            "models": {
+                "anthropic/claude-3.5-sonnet": {
+                    "provider": "anthropic",
+                    "model_id": "anthropic/claude-3.5-sonnet",
+                    "display_name": "Anthropic: Claude 3.5 Sonnet",
+                    "pricing": {
+                        "input_per_million": 3.0,
+                        "output_per_million": 15.0,
+                        "cache_read_per_million": 0.3,
+                        "cache_creation_per_million": 3.75,
+                        "currency": "USD",
+                    },
+                    "context_window": 200000,
+                    "max_output_tokens": 8192,
+                    "model_type": "chat",
+                    "supports_vision": True,
+                    "supports_function_calling": True,
+                    "supports_streaming": True,
+                    "category": "flagship",
+                },
+                "openai/gpt-4": {
+                    "provider": "openai",
+                    "model_id": "openai/gpt-4",
+                    "display_name": "OpenAI: GPT-4",
+                    "pricing": {
+                        "input_per_million": 30.0,
+                        "output_per_million": 60.0,
+                        "currency": "USD",
+                    },
+                    "context_window": 8192,
+                    "max_output_tokens": 4096,
+                    "model_type": "chat",
+                    "supports_vision": False,
+                    "supports_function_calling": True,
+                    "supports_streaming": True,
+                    "category": "flagship",
+                },
+            },
+            "providers": {
+                "anthropic": {
+                    "name": "Anthropic",
+                    "website": "https://anthropic.com",
+                    "pricing_page": "https://anthropic.com/pricing",
+                    "affiliate_link": "https://console.anthropic.com",
+                },
+                "openai": {
+                    "name": "OpenAI",
+                    "website": "https://openai.com",
+                    "pricing_page": "https://openai.com/pricing",
+                    "affiliate_link": "https://platform.openai.com/signup",
+                },
+            },
+            "metadata": {
+                "total_models": 2,
+                "sources": ["openrouter", "litellm"],
+                "last_scrape": "2026-01-20T06:05:10.791612+00:00",
+                "categories": {"flagship": 2},
+            },
+        }
+
+    def test_get_pricing_returns_cache_fields(self, sample_response_with_cache_pricing):
+        """Test that get_pricing returns cache pricing fields."""
+        import tokenprice.pricing as pricing_mod
+
+        pricing_mod._get_pricing_data_bucketed.cache_clear()
+
+        with patch("tokenprice.pricing.httpx.AsyncClient.get") as mock_get:
+            mock_response = Mock()
+            mock_response.json.return_value = sample_response_with_cache_pricing
+            mock_get.return_value = mock_response
+
+            pricing = get_pricing_sync("anthropic/claude-3.5-sonnet")
+
+            assert pricing.cache_read_per_million == 0.3
+            assert pricing.cache_creation_per_million == 3.75
+
+    def test_get_pricing_cache_fields_default_to_input_price(
+        self, sample_response_with_cache_pricing
+    ):
+        """Test that cache fields default to input price when not in source data."""
+        import tokenprice.pricing as pricing_mod
+
+        pricing_mod._get_pricing_data_bucketed.cache_clear()
+
+        with patch("tokenprice.pricing.httpx.AsyncClient.get") as mock_get:
+            mock_response = Mock()
+            mock_response.json.return_value = sample_response_with_cache_pricing
+            mock_get.return_value = mock_response
+
+            pricing = get_pricing_sync("openai/gpt-4")
+
+            # Should default to input price (30.0) when not available
+            assert pricing.cache_read_per_million == 30.0
+            assert pricing.cache_creation_per_million == 30.0
+
+    def test_compute_cost_with_cache_tokens(self, sample_response_with_cache_pricing):
+        """Test compute_cost with cache read and creation tokens."""
+        import tokenprice.pricing as pricing_mod
+
+        pricing_mod._get_pricing_data_bucketed.cache_clear()
+
+        with patch("tokenprice.pricing.httpx.AsyncClient.get") as mock_get:
+            mock_response = Mock()
+            mock_response.json.return_value = sample_response_with_cache_pricing
+            mock_get.return_value = mock_response
+
+            # 1000 input, 500 output, 10000 cache read, 5000 cache creation
+            cost = compute_cost_sync(
+                "anthropic/claude-3.5-sonnet",
+                input_tokens=1000,
+                output_tokens=500,
+                cache_read_tokens=10000,
+                cache_creation_tokens=5000,
+            )
+
+            # input: (1000 / 1M) * 3.0 = 0.003
+            # output: (500 / 1M) * 15.0 = 0.0075
+            # cache_read: (10000 / 1M) * 0.3 = 0.003
+            # cache_creation: (5000 / 1M) * 3.75 = 0.01875
+            # total: 0.003 + 0.0075 + 0.003 + 0.01875 = 0.03225
+            assert abs(cost - 0.03225) < 0.0001
+
+    def test_compute_cost_cache_fallback_to_input_price(
+        self, sample_response_with_cache_pricing
+    ):
+        """Test that cache pricing falls back to input price when not available."""
+        import tokenprice.pricing as pricing_mod
+
+        pricing_mod._get_pricing_data_bucketed.cache_clear()
+
+        with patch("tokenprice.pricing.httpx.AsyncClient.get") as mock_get:
+            mock_response = Mock()
+            mock_response.json.return_value = sample_response_with_cache_pricing
+            mock_get.return_value = mock_response
+
+            # GPT-4 has no cache pricing, should fall back to input price
+            cost = compute_cost_sync(
+                "openai/gpt-4",
+                input_tokens=1000,
+                output_tokens=500,
+                cache_read_tokens=10000,
+            )
+
+            # input: (1000 / 1M) * 30.0 = 0.03
+            # output: (500 / 1M) * 60.0 = 0.03
+            # cache_read: (10000 / 1M) * 30.0 = 0.3 (fallback to input price)
+            # total: 0.03 + 0.03 + 0.3 = 0.36
+            assert abs(cost - 0.36) < 0.0001
+
+    def test_compute_cost_negative_cache_tokens_raises(
+        self, sample_response_with_cache_pricing
+    ):
+        """Test that negative cache token counts raise ValueError."""
+        import tokenprice.pricing as pricing_mod
+
+        pricing_mod._get_pricing_data_bucketed.cache_clear()
+
+        with patch("tokenprice.pricing.httpx.AsyncClient.get") as mock_get:
+            mock_response = Mock()
+            mock_response.json.return_value = sample_response_with_cache_pricing
+            mock_get.return_value = mock_response
+
+            with pytest.raises(
+                ValueError, match="Cache token counts must be non-negative"
+            ):
+                compute_cost_sync(
+                    "anthropic/claude-3.5-sonnet",
+                    input_tokens=1000,
+                    output_tokens=500,
+                    cache_read_tokens=-100,
+                )
+
+    def test_compute_cost_zero_cache_tokens(self, sample_response_with_cache_pricing):
+        """Test compute_cost with zero cache tokens (default behavior)."""
+        import tokenprice.pricing as pricing_mod
+
+        pricing_mod._get_pricing_data_bucketed.cache_clear()
+
+        with patch("tokenprice.pricing.httpx.AsyncClient.get") as mock_get:
+            mock_response = Mock()
+            mock_response.json.return_value = sample_response_with_cache_pricing
+            mock_get.return_value = mock_response
+
+            cost = compute_cost_sync(
+                "anthropic/claude-3.5-sonnet",
+                input_tokens=1000,
+                output_tokens=500,
+            )
+
+            # input: (1000 / 1M) * 3.0 = 0.003
+            # output: (500 / 1M) * 15.0 = 0.0075
+            # total: 0.003 + 0.0075 = 0.0105
+            assert abs(cost - 0.0105) < 0.0001
