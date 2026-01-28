@@ -1,7 +1,7 @@
-"""Fetch and manage LLM pricing data from LLMTracker.
+"""Fetch and manage LLM pricing data from tokentracking.
 
-Data source: https://github.com/MrUnreal/LLMTracker
-Website: https://mrunreal.github.io/LLMTracker/
+Data source: https://github.com/DiTo97/tokentracking (fork with cache pricing)
+Original: https://github.com/MrUnreal/LLMTracker
 """
 
 import httpx
@@ -9,28 +9,29 @@ from async_lru import alru_cache
 
 from tokenprice.modeling import PricingData
 
-# LLMTracker data URL - updated every 6 hours
-LLMTRACKER_URL = "https://raw.githubusercontent.com/MrUnreal/LLMTracker/main/data/current/prices.json"
+# tokentracking data URL - updated every 6 hours
+# Fork of LLMTracker with cache pricing fields (cache_read/creation_per_million)
+TOKENTRACKING_URL = "https://raw.githubusercontent.com/DiTo97/tokentracking/main/data/current/prices.json"
 
-# Cache TTL: 6 hours (21600 seconds) - aligns with LLMTracker update frequency
+# Cache TTL: 6 hours (21600 seconds) - aligns with tokentracking update frequency
 CACHE_TTL_SECONDS = 6 * 60 * 60
 
 
 async def fetch_pricing_data() -> PricingData:
-    """Fetch pricing data from LLMTracker.
+    """Fetch pricing data from tokentracking.
 
-    This function makes an async HTTP request to LLMTracker's pricing data endpoint
+    This function makes an async HTTP request to tokentracking's pricing data endpoint
     and parses it into a PricingData object.
 
     Returns:
-        PricingData: Parsed pricing data from LLMTracker
+        PricingData: Parsed pricing data from tokentracking
 
     Raises:
         httpx.HTTPError: If the HTTP request fails
         pydantic.ValidationError: If the response data is invalid
     """
     async with httpx.AsyncClient() as client:
-        response = await client.get(LLMTRACKER_URL)
+        response = await client.get(TOKENTRACKING_URL)
         response.raise_for_status()
         data = response.json()  # httpx .json() is not async
         return PricingData.model_validate(data)
